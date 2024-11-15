@@ -5,9 +5,27 @@
 - [ ] [arXiv](): preparing ...
 - [ ] [project page](): preparing ...
 
-<p align="center">
-  <img width="50%" src="./figure/fig1.png">
-</p>
+#### CLIC Framework and Results
+<div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+  <div style="flex: 1; text-align: center;">
+    <img width="80%" src="figure/framework.png" alt="CLIC Framework">
+  </div>
+  <div style="flex: 1; text-align: center;">
+    <img width="95%" height="96%" src="figure/result.png" alt="CLIC vs. Super & Unsup">
+  </div>
+</div>
+
+
+#### t-SNE Visualization and Activation Map
+<div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+  <div style="flex: 1; text-align: center;">
+    <img width="80%" src="figure/t-SNE.png" alt="t-SNE Visualization">
+  </div>
+  <div style="flex: 1; text-align: center;">
+    <img width="95%" src="figure/act_map.png" alt="Activation Map">
+  </div>
+</div>
+
 
 ### 1. Installation
 
@@ -47,8 +65,7 @@ python train.py \
 
 To do unsupervised pre-training of a ResNet-50 model on ImageNet in an 8-gpu machine, run:
 ```
-python train.py fine_tuning.py \
-
+python fine_tuning.py
 ```
 
 ### Acknowledgment
