@@ -6,22 +6,22 @@
 - [ ] [project page](): preparing ...
 
 #### CLIC Framework and Results
-<div style="flex: 1; text-align: center;">
-    <img width="50%" src="figure/framework.png" alt="CLIC Framework">
-</div>
+<p align="center">
+    <img width="50%" src="figure/framework.png">
+</p>
 
-<div style="flex: 1; text-align: center;">
-    <img width="50%" src="figure/result.png" alt="CLIC vs. Super & Unsup">
-</div>
+<p align="center">
+    <img width="50%" src="figure/result.png">
+</p>
 
 
 #### t-SNE Visualization and Activation Map
-<div style="flex: 1; text-align: center;">
-    <img width="50%" src="figure/t-SNE.png" alt="t-SNE Visualization">
-</div>
-<div style="flex: 1; text-align: center;">
-    <img width="50%" src="figure/act_map.png" alt="Activation Map">
-</div>
+<p align="center">
+    <img width="50%" src="figure/t-SNE.png">
+</p>
+<p align="center">
+    <img width="50%" src="figure/act_map.png">
+</p>
 
 
 ### 1. Installation
