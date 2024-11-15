@@ -12,6 +12,7 @@ import torch
 import torchvision
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision import models
 
 
 class slam(nn.Module):
@@ -162,12 +163,21 @@ class ICNet(nn.Module):
 
 # fine-tuning with CLIC q encoder
 class ICNet_ft(nn.Module):
-    def __init__(self, size=512):
+    def __init__(self, size=512, encoder_name='resnet18'):
         super(ICNet_ft, self).__init__()
         self.size1 = size
 
+        # todo: base_encoders
+        models_name = {
+            "resnet18": models.resnet18,
+            "resnet50": models.resnet50,
+            "resnet101": models.resnet101,
+            "resnet152": models.resnet152,
+            "swin_b": models.swin_b,
+        }
+
         # q encoder
-        base_encoder = torchvision.models.resnet18()
+        base_encoder = models_name[encoder_name]()
         self.q_encoder = nn.Sequential(*list(base_encoder.children())[:-2])  # remove avg-pool fc
 
         # freeze q params
@@ -196,6 +206,7 @@ class ICNet_ft(nn.Module):
 
     def forward(self, x):
         x = self.q_encoder(x)
+        x = x.permute(0, 3, 1, 2)
         x = self.up(x)
 
         cly_map = self.to_map(self.to_map_f_slam(self.to_map_f(x)))
@@ -209,8 +220,8 @@ class ICNet_ft(nn.Module):
         return score, cly_map
 
 if __name__ == '__main__':
-    input = torch.randn(8, 3, 224, 224)
+    input = torch.randn(8, 3, 512, 512)
 
-    icnet_ft = ICNet_ft()
+    icnet_ft = ICNet_ft(encoder_name='resnet18')
     print(icnet_ft)
     print(icnet_ft(input))

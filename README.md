@@ -6,24 +6,21 @@
 - [ ] [project page](): preparing ...
 
 #### CLIC Framework and Results
-<div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
-  <div style="flex: 1; text-align: center;">
-    <img width="80%" src="figure/framework.png" alt="CLIC Framework">
-  </div>
-  <div style="flex: 1; text-align: center;">
-    <img width="95%" height="96%" src="figure/result.png" alt="CLIC vs. Super & Unsup">
-  </div>
+<div style="flex: 1; text-align: center;">
+    <img width="50%" src="figure/framework.png" alt="CLIC Framework">
+</div>
+
+<div style="flex: 1; text-align: center;">
+    <img width="50%" src="figure/result.png" alt="CLIC vs. Super & Unsup">
 </div>
 
 
 #### t-SNE Visualization and Activation Map
-<div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
-  <div style="flex: 1; text-align: center;">
-    <img width="80%" src="figure/t-SNE.png" alt="t-SNE Visualization">
-  </div>
-  <div style="flex: 1; text-align: center;">
-    <img width="95%" src="figure/act_map.png" alt="Activation Map">
-  </div>
+<div style="flex: 1; text-align: center;">
+    <img width="50%" src="figure/t-SNE.png" alt="t-SNE Visualization">
+</div>
+<div style="flex: 1; text-align: center;">
+    <img width="50%" src="figure/act_map.png" alt="Activation Map">
 </div>
 
 
