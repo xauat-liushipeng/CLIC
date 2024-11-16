@@ -30,11 +30,11 @@ import torch.utils.data.distributed
 import torchvision.models as models
 
 from clic import builder, loader
-from clic.ca_loss import cal_batch_ge, ge_fae_error
-from clic.loader import ImageDataset
+from clic.CAL import compute_batch_ge, compute_ge_fae_error
+from clic.loader import CLICDataset
 
 parser = argparse.ArgumentParser(description="PyTorch ImageNet Training")
-parser.add_argument("--data", default="E:/edata/IC9600/", metavar="DIR", help="path to dataset")
+parser.add_argument("--data", default="../clic_data/", metavar="DIR", help="path to dataset")
 parser.add_argument("-a", "--arch", metavar="ARCH", default="resnet50",
                     help="encoder architecture, default: resnet50")
 parser.add_argument( "-j", "--workers", default=24, type=int, metavar="N",
@@ -188,14 +188,8 @@ def main_worker(gpu, ngpus_per_node, args):
     cudnn.benchmark = True
 
     # Data loading code
-
-    # ImageNet train  arch: ImageNet/train/cls_folder/imgs
-    # traindir = os.path.join(args.data, "train")
-    # train_dataset = datasets.ImageFolder(traindir, loader.CropTransform())
-
-    # Image Complexity train  arch: dataset/images/imgs
     traindir = os.path.join(args.data, "images")
-    train_dataset = ImageDataset(traindir, loader.CropTransform())
+    train_dataset = CLICDataset(traindir, loader.TwoCropsTransform())
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
@@ -276,9 +270,9 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         loss = criterion(output, target)
 
         # global entropy of mini-batch
-        batch_ge = cal_batch_ge(images[0])
+        batch_ge = compute_batch_ge(images[0])
         # compute ge fae error, multiply ca lambda, add to loss
-        ca_loss = ge_fae_error(batch_ge, stage_maps) * args.ca_lambda
+        ca_loss = compute_ge_fae_error(batch_ge, stage_maps) * args.ca_lambda
         loss += ca_loss
 
         # acc1/acc5 are (K+1)-way contrast classifier accuracy

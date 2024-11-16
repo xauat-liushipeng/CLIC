@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 '''=================================================
 @Proj -> File
-        ：clic -> clic -> ca_loss.py
+        ：clic -> clic -> CAL.py
 @IDE    ：PyCharm
 @Author ：liu shipeng
 @Date   ：2024/11/12
@@ -13,7 +13,7 @@ import torch
 from scipy.stats import entropy
 import torch.nn.functional as F
 
-def cal_batch_ge(batch_imgs):
+def compute_batch_ge(batch_imgs):
     """ compute global entropy (ge) of per image in mini-batch """
 
     batch_ge = []
@@ -25,7 +25,7 @@ def cal_batch_ge(batch_imgs):
     return torch.tensor(batch_ge).cuda()
 
 
-def cal_stage_fae(feature_map):
+def compute_stage_fae(feature_map):
     """
     calculate feature activation energy of every stage
     - Input: feature_map: (n, c, h, w)
@@ -36,11 +36,11 @@ def cal_stage_fae(feature_map):
     return stage_fae
 
 
-def ge_fae_error(batch_ge, stage_maps):
+def compute_ge_fae_error(batch_ge, stage_maps):
     """ complexity aware loss: compute ge and fae by MSE loss """
     batch_fae = torch.zeros_like(batch_ge).cuda()
     for stage in stage_maps:
-        batch_fae += cal_stage_fae(stage_maps[stage])
+        batch_fae += compute_stage_fae(stage_maps[stage])
 
     # generate a mask, filter nan or inf
     mask = torch.isfinite(batch_fae) & torch.isfinite(batch_ge)

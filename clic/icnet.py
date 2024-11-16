@@ -163,11 +163,12 @@ class ICNet(nn.Module):
 
 # fine-tuning with CLIC q encoder
 class ICNet_ft(nn.Module):
-    def __init__(self, size=512, encoder_name='resnet18'):
+    def __init__(self, size=512, encoder_name='resnet50'):
         super(ICNet_ft, self).__init__()
         self.size1 = size
+        self.encoder_name = encoder_name
 
-        # todo: base_encoders
+        # base_encoders map
         models_name = {
             "resnet18": models.resnet18,
             "resnet50": models.resnet50,
@@ -186,7 +187,15 @@ class ICNet_ft(nn.Module):
 
         ## upsample
         self.upsize = size // 8
-        self.up = up_conv_bn_relu(up_size=self.upsize, in_channels=512, out_channels=512)
+
+        if encoder_name == 'resnet18':
+            in_channels = 512
+        elif encoder_name.startswith('swin'):
+            in_channels = 1024
+        else:
+            in_channels = 2048
+
+        self.up = up_conv_bn_relu(up_size=self.upsize, in_channels=in_channels, out_channels=512)
 
         ## map prediction head
         self.to_map_f = conv_bn_relu(256 * 2, 256 * 2)
@@ -206,7 +215,11 @@ class ICNet_ft(nn.Module):
 
     def forward(self, x):
         x = self.q_encoder(x)
-        x = x.permute(0, 3, 1, 2)
+
+        # swin transformer need permute
+        if self.encoder_name.startswith("swin"):
+            x = x.permute(0, 3, 1, 2)
+
         x = self.up(x)
 
         cly_map = self.to_map(self.to_map_f_slam(self.to_map_f(x)))
@@ -222,6 +235,6 @@ class ICNet_ft(nn.Module):
 if __name__ == '__main__':
     input = torch.randn(8, 3, 512, 512)
 
-    icnet_ft = ICNet_ft(encoder_name='resnet18')
+    icnet_ft = ICNet_ft()
     print(icnet_ft)
     print(icnet_ft(input))

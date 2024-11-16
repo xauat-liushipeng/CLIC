@@ -22,7 +22,7 @@ from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import _LRScheduler
 from scipy.stats import pearsonr, spearmanr
 
-from clic.loader import ic_dataset
+from clic.loader import ICDataset
 from clic.icnet import ICNet_ft
 
 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
   
-    trainDataset = ic_dataset(
+    trainDataset = ICDataset(
         txt_path ="../IC9600/train.txt",
         img_path = "../IC9600/images/",
         transform = trainTransform
@@ -138,7 +138,7 @@ if __name__ == "__main__":
                              shuffle=True
                              )
 
-    testDataset = ic_dataset(
+    testDataset = ICDataset(
         txt_path ="../IC9600/test.txt",
         img_path = "../IC9600/images/",
         transform=testTransform
