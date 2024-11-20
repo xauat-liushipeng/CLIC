@@ -8,6 +8,8 @@
 @Date   ：2024/11/12
 @info   ：ICNet official impl: https://github.com/tinglyfeng/IC9600
 =================================================='''
+from collections import OrderedDict
+
 import torch
 import torchvision
 import torch.nn as nn
@@ -179,10 +181,11 @@ class ICNet_ft(nn.Module):
 
         # q encoder
         base_encoder = models_name[encoder_name]()
-        self.q_encoder = nn.Sequential(*list(base_encoder.children())[:-2])  # remove avg-pool fc
+        # remove avg-pool fc
+        self.encoder_q = nn.Sequential(OrderedDict(list(base_encoder.named_children())[:-2]))
 
         # freeze q params
-        for param in self.q_encoder.parameters():
+        for param in self.encoder_q.parameters():
             param.requires_grad = False
 
         ## upsample
@@ -214,7 +217,7 @@ class ICNet_ft(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
     def forward(self, x):
-        x = self.q_encoder(x)
+        x = self.encoder_q(x)
 
         # swin transformer need permute
         if self.encoder_name.startswith("swin"):
@@ -235,6 +238,6 @@ class ICNet_ft(nn.Module):
 if __name__ == '__main__':
     input = torch.randn(8, 3, 512, 512)
 
-    icnet_ft = ICNet_ft()
+    icnet_ft = ICNet_ft(encoder_name='swin_b')
     print(icnet_ft)
     print(icnet_ft(input))

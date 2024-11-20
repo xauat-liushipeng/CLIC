@@ -152,7 +152,7 @@ normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 
 q_transform = [
     transforms.RandomResizedCrop(224, scale=(0.2, 1.0)),
     transforms.RandomApply([transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8),
-    transforms.RandomApply([GaussianBlur((5, 9), (0.1, 2.0))], p=0.5),
+    transforms.RandomApply([GaussianBlur()], p=0.5),
     transforms.RandomHorizontalFlip(p=0.5),
     transforms.ToTensor(),
     normalize
@@ -162,7 +162,7 @@ q_transform = [
 k_transform = [
     transforms.RandomResizedCrop(224, scale=(0.2, 1.0)),
     transforms.RandomApply([transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8),
-    transforms.RandomApply([GaussianBlur((5, 9), (0.1, 2.0))], p=0.5),
+    transforms.RandomApply([GaussianBlur()], p=0.5),
     transforms.RandomHorizontalFlip(),
     transforms.RandomVerticalFlip(p=0.5),
     transforms.RandomApply([RandomRotation(max_angle=30)], p=0.5),
