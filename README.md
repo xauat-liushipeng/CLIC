@@ -2,8 +2,7 @@
 ### The official code of our paper:
 ### CLIC: Contrastive Learning Framework for Unsupervised Image Complexity Representation
 
-- [ ] [arXiv](): preparing ...
-- [ ] [project page](): preparing ...
+- [x] arXiv: [https://arxiv.org/abs/2411.12792]()
 
 ### CLIC Framework and Results
 <p align="center">
