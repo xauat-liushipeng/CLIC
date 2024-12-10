@@ -4,7 +4,6 @@
 @Proj -> File
         ：clic -> clic -> CAL.py
 @IDE    ：PyCharm
-@Author ：liu shipeng
 @Date   ：2024/11/12
 @info   ：compute complexity aware loss
 =================================================='''

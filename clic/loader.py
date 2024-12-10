@@ -4,7 +4,6 @@
 @Proj -> File
         ：clic -> clic -> loader.py
 @IDE    ：PyCharm
-@Author ：liu shipeng
 @Date   ：2024/11/12
 @info   ：datasets, transforms
 =================================================='''

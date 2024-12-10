@@ -4,7 +4,6 @@
 # @Proj -> File
 #         ：CLIC -> get_flickr
 # @IDE    ：PyCharm
-# @Author ：liu shipeng
 # @Date   ：2024/11/16 09:38
 # @info   ：download and parse Flickr dataset
 # ==================================================

@@ -4,7 +4,6 @@
 # @Proj -> File
 #         ：CLIC -> uniform_sample
 # @IDE    ：PyCharm
-# @Author ：liu shipeng
 # @Date   ：2024/11/16 10:36
 # @info   ：uniform sample form ImageNet and Flickr
 # ==================================================

@@ -4,7 +4,6 @@
 @Proj -> File
         ：clic -> clic -> builder.py
 @IDE    ：PyCharm
-@Author ：liu shipeng
 @Date   ：2024/11/12
 @info   ：clic builder
 =================================================='''

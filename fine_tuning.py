@@ -4,7 +4,6 @@
 @Proj -> File
         ：clic -> fine_tuning.py
 @IDE    ：PyCharm
-@Author ：liu shipeng
 @Date   ：2024/11/12
 @info   ：modified from https://github.com/tinglyfeng/IC9600
 =================================================='''
