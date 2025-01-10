@@ -8,8 +8,10 @@
 # @info   ：download and parse Flickr dataset
 # ==================================================
 import json
+import logging
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 import pandas as pd
 import requests
@@ -102,11 +104,73 @@ def download_parquet_images(parquet_path, image_size='url_m', save_root='../../F
             except Exception as e:
                 print(f"Error downloading {image_url}: {e}")
 
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
+                    handlers=[logging.FileHandler("download_images.log"), logging.StreamHandler()])
+
+def download_image(image_url, image_id, output_dir):
+    if pd.notna(image_url):
+        try:
+            # Send GET request with timeout
+            response = requests.get(image_url, stream=True, timeout=10)
+            if response.status_code == 200:
+                # Extract file extension and validate it
+                file_extension = image_url.split('.')[-1].lower()
+                if file_extension not in ['jpg', 'jpeg', 'png', 'bmp', 'gif']:  # Common image formats
+                    file_extension = 'jpg'
+
+                # Save the image
+                file_path = os.path.join(output_dir, f"{image_id}.{file_extension}")
+                with open(file_path, 'wb') as f:
+                    f.write(response.content)
+                logging.info(f"Downloaded: {file_path}")
+            else:
+                logging.warning(f"Failed to download {image_url}, status code: {response.status_code}")
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Network error downloading {image_url}: {e}")
+        except Exception as e:
+            logging.error(f"Error downloading {image_url}: {e}")
+
+
+def download_parquet_images2(parquet_path, image_size='url_m', save_root='../../Flickr/train/', max_workers=4):
+    logging.info(f'Downloading from {parquet_path}')
+
+    # Read the parquet file
+    df = pd.read_parquet(parquet_path)
+
+    # Set the image size column
+    url_column = image_size
+
+    # Create output directory
+    output_dir = os.path.join(save_root, os.path.basename(parquet_path).split(".")[0])
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Get existing files
+    exist_files = set(os.listdir(output_dir))
+
+    # Prepare tasks for downloading images
+    tasks = []
+    for _, row in df.iterrows():
+        image_url = row.get(url_column)
+        image_id = row.get('id')
+        if f"{image_id}.jpg" in exist_files or f"{image_id}.jpeg" in exist_files:
+            logging.info(f"{image_id} exists! Skipping.")
+            continue
+        tasks.append((image_url, image_id, output_dir))
+
+    # Use ThreadPoolExecutor to download images concurrently
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        list(tqdm(executor.map(lambda args: download_image(*args), tasks), total=len(tasks), desc="Downloading images"))
+
+    logging.info("Download completed.")
+
+
 if __name__ == '__main__':
     # Hugging Face API URL
-    url = "https://huggingface.co/api/datasets/bigdata-pw/Flickr/parquet/default/train"
+    # url = "https://huggingface.co/api/datasets/bigdata-pw/Flickr/parquet/default/train"
 
-    parquet_urls_file = "./parquet_urls.json"
+    # parquet_urls_file = "./parquet_urls.json"
     parquet_save_dir = '../../Flickr/'
 
     image_size = 'url_m'
