@@ -76,10 +76,16 @@ def download_parquet_images(parquet_path, image_size='url_m', save_root='../../F
     output_dir = save_root + os.path.basename(parquet_path).split(".")[0]
     os.makedirs(output_dir, exist_ok=True)
 
+    exist_files = os.listdir(output_dir)
+
     # loop for download images
-    for index, row in tqdm(df.iterrows()):
+    for index, row in df.iterrows():
         image_url = row.get(url_column)
         image_id = row.get('id')
+        if image_id+'.jpg' in exist_files:
+            print(image_id + 'exist!')
+            continue
+        print("image id: {}".format(image_id))
         if pd.notna(image_url):
             try:
                 # get
@@ -90,7 +96,7 @@ def download_parquet_images(parquet_path, image_size='url_m', save_root='../../F
                     file_path = os.path.join(output_dir, f"{image_id}.{file_extension}")
                     with open(file_path, 'wb') as f:
                         f.write(response.content)
-                    # print(f"Downloaded: {file_path}")
+                    print(f"Downloaded: {file_path}")
                 else:
                     print(f"Failed to download {image_url}, status code: {response.status_code}")
             except Exception as e:
@@ -101,7 +107,7 @@ if __name__ == '__main__':
     url = "https://huggingface.co/api/datasets/bigdata-pw/Flickr/parquet/default/train"
 
     parquet_urls_file = "./parquet_urls.json"
-    parquet_save_dir = '../../Flickr/parquet/'
+    parquet_save_dir = '../../Flickr/'
 
     image_size = 'url_m'
     images_save_dir = '../../Flickr/train/'
@@ -109,7 +115,8 @@ if __name__ == '__main__':
     # note: parquet_urls.json have been uploaded in ./data
     # urls_file = download_parquet_urls(url, parquet_urls_file)
 
-    download_parquets(parquet_urls_file, parquet_save_dir)
+    # download_parquets(parquet_urls_file, parquet_save_dir)
 
     for parquet in os.listdir(parquet_save_dir):
-        download_parquet_images(parquet_save_dir + parquet, image_size, images_save_dir)
+        if (parquet.endswith('parquet')):
+            download_parquet_images(parquet_save_dir + parquet, image_size, images_save_dir)
