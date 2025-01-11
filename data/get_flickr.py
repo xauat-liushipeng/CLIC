@@ -11,10 +11,14 @@ import json
 import logging
 import os
 import sys
+import threading
 from concurrent.futures import ThreadPoolExecutor
+from time import sleep
 
 import pandas as pd
 import requests
+from conda.common.io import as_completed
+from requests import HTTPError
 from tqdm import tqdm
 
 
@@ -106,8 +110,7 @@ def download_parquet_images(parquet_path, image_size='url_m', save_root='../../F
 
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
-                    handlers=[logging.FileHandler("download_images.log"), logging.StreamHandler()])
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def download_image(image_url, image_id, output_dir):
     if pd.notna(image_url):
@@ -127,13 +130,17 @@ def download_image(image_url, image_id, output_dir):
                 logging.info(f"Downloaded: {file_path}")
             else:
                 logging.warning(f"Failed to download {image_url}, status code: {response.status_code}")
+                if response.status_code == 429:
+                    # If status code is 429, this thread will wait for 2 minutes
+                    sleep(120)
+                if response.status_code == 403:
+                    sleep(300)
         except requests.exceptions.RequestException as e:
             logging.error(f"Network error downloading {image_url}: {e}")
         except Exception as e:
             logging.error(f"Error downloading {image_url}: {e}")
 
-
-def download_parquet_images2(parquet_path, image_size='url_m', save_root='../../Flickr/train/', max_workers=4):
+def download_parquet_images2(parquet_path, image_size='url_m', save_root='../../Flickr/train/', max_workers=8):
     logging.info(f'Downloading from {parquet_path}')
 
     # Read the parquet file
@@ -183,4 +190,4 @@ if __name__ == '__main__':
 
     for parquet in os.listdir(parquet_save_dir):
         if (parquet.endswith('parquet')):
-            download_parquet_images(parquet_save_dir + parquet, image_size, images_save_dir)
+            download_parquet_images2(parquet_save_dir + parquet, image_size, images_save_dir)
