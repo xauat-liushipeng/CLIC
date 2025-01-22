@@ -179,7 +179,8 @@ def concat_all_gather(tensor):
     output = torch.cat(tensors_gather, dim=0)
     return output
 
-# from torchsummary import torchsummary
-# from torchvision import models
-# model = CLIC(models.__dict__['resnet50'])
-# torchsummary.summary(model, (3,224,224), 8, 'cpu')
+if __name__ == '__main__':
+    input = torch.randn(8, 3, 224, 224)
+    from torchvision import models
+    model = CLIC(models.__dict__['resnet50'])
+    print(model(input, input))

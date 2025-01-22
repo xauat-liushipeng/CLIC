@@ -10,7 +10,6 @@
 import json
 import logging
 import os
-import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from time import sleep
@@ -18,95 +17,6 @@ from time import sleep
 import pandas as pd
 import requests
 from conda.common.io import as_completed
-from requests import HTTPError
-from tqdm import tqdm
-
-
-def download_parquet_urls(url, output_file="./parquet_urls.json"):
-    # get request
-    response = requests.get(url, stream=True)
-
-    # check status code
-    if response.status_code == 200:
-        # save file to local
-        with open(output_file, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
-        print(f"save to: {output_file}")
-        return output_file
-    else:
-        print(f"download false, code: : {response.status_code}")
-        sys.exit(-1)
-
-def download_parquets(parquet_urls_file, output_dir="../../Flickr/parquet/"):
-    # check path
-    os.makedirs(output_dir, exist_ok=True)
-
-    f = open(parquet_urls_file, "r")
-    fli = json.load(f)
-
-    # loop
-    for part_url in fli:
-        print('downloading {}'.format(part_url))
-
-        # convert bytes to str
-        if isinstance(part_url, bytes):
-            part_url = part_url.decode('utf-8')
-
-        file_name = part_url.split("/")[-1]
-        output_path = os.path.join(output_dir, file_name)
-
-        # get request
-        response = requests.get(part_url, stream=True)
-        if response.status_code == 200:
-            # save
-            with open(output_path, "wb") as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
-            print(f"Downloaded and saved: {output_path}")
-        else:
-            print(f"Failed to download {part_url}, status code: {response.status_code}")
-
-
-def download_parquet_images(parquet_path, image_size='url_m', save_root='../../Flickr/train/'):
-    print('downloading from {}'.format(parquet_path))
-    # read parquet
-    df = pd.read_parquet(parquet_path)
-
-    # set image size in parquet, default url_m in our experiment
-    url_column = image_size
-
-    # mkdir for saving images
-    output_dir = save_root + os.path.basename(parquet_path).split(".")[0]
-    os.makedirs(output_dir, exist_ok=True)
-
-    exist_files = os.listdir(output_dir)
-
-    # loop for download images
-    for index, row in df.iterrows():
-        image_url = row.get(url_column)
-        image_id = row.get('id')
-        if image_id+'.jpg' in exist_files:
-            print(image_id + 'exist!')
-            continue
-        print("image id: {}".format(image_id))
-        if pd.notna(image_url):
-            try:
-                # get
-                response = requests.get(image_url, stream=True)
-                if response.status_code == 200:
-                    # save
-                    file_extension = image_url.split('.')[-1]
-                    file_path = os.path.join(output_dir, f"{image_id}.{file_extension}")
-                    with open(file_path, 'wb') as f:
-                        f.write(response.content)
-                    print(f"Downloaded: {file_path}")
-                else:
-                    print(f"Failed to download {image_url}, status code: {response.status_code}")
-            except Exception as e:
-                print(f"Error downloading {image_url}: {e}")
 
 
 # Configure logging
@@ -128,26 +38,39 @@ def download_image(image_url, image_id, output_dir):
                 with open(file_path, 'wb') as f:
                     f.write(response.content)
                 logging.info(f"Downloaded: {file_path}")
+                return True
             else:
                 logging.warning(f"Failed to download {image_url}, status code: {response.status_code}")
                 if response.status_code == 429:
                     # If status code is 429, this thread will wait for 2 minutes
                     sleep(120)
-                if response.status_code == 403:
-                    sleep(300)
+                else:
+                    return False
         except requests.exceptions.RequestException as e:
             logging.error(f"Network error downloading {image_url}: {e}")
+            return False
         except Exception as e:
             logging.error(f"Error downloading {image_url}: {e}")
+            return False
+    else:
+        return False
 
-def download_parquet_images2(parquet_path, image_size='url_m', save_root='../../Flickr/train/', max_workers=8):
+
+def download_parquet_images(parquet_path, image_size='url_m', save_root='../../Flickr/train/', max_workers=8):
+    # 初始化锁和计数器
+    lock = threading.Lock()
+    total_files_downloaded = [0]
+
     logging.info(f'Downloading from {parquet_path}')
 
     # Read the parquet file
-    df = pd.read_parquet(parquet_path)
+    df = pd.read_parquet(parquet_path, columns=['id', 'url_m'])
+
+    # Shuffle the dataframe
+    df = df.sample(frac=1, random_state=42).reset_index(drop=True)
 
     # Set the image size column
-    url_column = image_size
+    # url_column = image_size
 
     # Create output directory
     output_dir = os.path.join(save_root, os.path.basename(parquet_path).split(".")[0])
@@ -158,36 +81,86 @@ def download_parquet_images2(parquet_path, image_size='url_m', save_root='../../
 
     # Prepare tasks for downloading images
     tasks = []
-    for _, row in df.iterrows():
-        image_url = row.get(url_column)
-        image_id = row.get('id')
+    for row in df.itertuples(index=True, name='Pandas'):
+        image_url = row[2]  # image size column
+        image_id = row[1]
         if f"{image_id}.jpg" in exist_files or f"{image_id}.jpeg" in exist_files:
             logging.info(f"{image_id} exists! Skipping.")
             continue
         tasks.append((image_url, image_id, output_dir))
 
-    # Use ThreadPoolExecutor to download images concurrently
+    # thread safe
+    def download_image_thread_safe(image_url, image_id, output_dir):
+        nonlocal total_files_downloaded
+        with lock:
+            if total_files_downloaded[0] >= 300:
+                return False
+
+        # download
+        if download_image(image_url, image_id, output_dir):
+            with lock:
+                total_files_downloaded[0] += 1
+                if total_files_downloaded[0] >= 300:
+                    return True
+
+        return False
+
+    # thread pool
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        list(tqdm(executor.map(lambda args: download_image(*args), tasks), total=len(tasks), desc="Downloading images"))
+        futures = {executor.submit(download_image_thread_safe, *task): task for task in tasks}
+        for future in as_completed(futures):
+            result = future.result()
+            if result:
+                logging.info(f"Reached 300 images in {output_dir}. Shutting down.")
+                executor.shutdown(wait=False)
+                break
 
     logging.info("Download completed.")
 
 
-if __name__ == '__main__':
-    # Hugging Face API URL
-    # url = "https://huggingface.co/api/datasets/bigdata-pw/Flickr/parquet/default/train"
+def download_parquets(parquet_urls_file, output_dir="../../Flickr/parquet/"):
+    # check path
+    os.makedirs(output_dir, exist_ok=True)
 
-    # parquet_urls_file = "./parquet_urls.json"
+    f = open(parquet_urls_file, "r")
+    fli = json.load(f)
+
+    # loop
+    for part_url in fli:
+        # convert bytes to str
+        if isinstance(part_url, bytes):
+            part_url = part_url.decode('utf-8')
+
+        file_name = part_url.split("/")[-1]
+        output_path = os.path.join(output_dir, file_name)
+
+        if not os.path.exists(output_path):
+            print('Downloading parquet: {}'.format(part_url))
+            # get request
+            response = requests.get(part_url, stream=True)
+            if response.status_code == 200:
+                # save
+                with open(output_path, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+                print(f"Downloaded and saved: {output_path}")
+            else:
+                print(f"Failed to download {part_url}, status code: {response.status_code}")
+        else:
+            print('Existing parquet: {}'.format(part_url))
+
+        download_parquet_images(output_path, image_size, images_save_dir)
+
+        os.remove(output_path)
+
+        print('Removed parquet: {}'.format(part_url))
+
+if __name__ == '__main__':
+    parquet_urls_file = "./parquet_urls.json"
     parquet_save_dir = '../../Flickr/'
 
     image_size = 'url_m'
-    images_save_dir = '../../Flickr/train/'
+    images_save_dir = '../../Flickr_train/'
 
-    # note: parquet_urls.json have been uploaded in ./data
-    # urls_file = download_parquet_urls(url, parquet_urls_file)
-
-    # download_parquets(parquet_urls_file, parquet_save_dir)
-
-    for parquet in os.listdir(parquet_save_dir):
-        if (parquet.endswith('parquet')):
-            download_parquet_images2(parquet_save_dir + parquet, image_size, images_save_dir)
+    download_parquets(parquet_urls_file, parquet_save_dir)
